@@ -1,0 +1,33 @@
+[project]
+name = "loginsight"
+version = "0.1.0"
+description = "Eventually, LogInsight should turn into a command line based interactive log file analysis tool."
+authors = [
+    { name = "Raphael Knaus", email = "rknuus@gmail.com" }
+]
+dependencies = [
+    "textual>=0.52.1",
+    "click>=8.1.7",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "textual-dev>=1.5.1",
+    "pytest>=8.0.2",
+    "pytest-sugar>=1.0.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.8.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/loginsight"]
