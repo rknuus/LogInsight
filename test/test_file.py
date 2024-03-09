@@ -30,6 +30,7 @@ def test_empty_file(generate_file_on_disk):
 
     assert file.size_in_bytes == 0
     assert file.number_of_lines == 0
+    assert file.number_of_bytes_in_longest_line == 0
 
     with pytest.raises(EOFError):
         file.load_lines(0, 1)
@@ -41,6 +42,7 @@ def test_file_with_non_newline_characters(generate_file_on_disk):
 
     assert file.size_in_bytes == 3
     assert file.number_of_lines == 1
+    assert file.number_of_bytes_in_longest_line == 3
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -54,6 +56,7 @@ def test_file_with_single_newline_character(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 2)
+    assert file.number_of_bytes_in_longest_line == 0
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -72,6 +75,7 @@ def test_file_with_two_lines_and_last_one_empty(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 2)
+    assert file.number_of_bytes_in_longest_line == 3
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -94,6 +98,7 @@ def test_file_with_two_lines_and_first_one_empty(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 2)
+    assert file.number_of_bytes_in_longest_line == 3
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -116,6 +121,7 @@ def test_file_with_two_non_empty_lines(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 2)
+    assert file.number_of_bytes_in_longest_line == 3
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -138,6 +144,7 @@ def test_file_with_three_empty_lines(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 3)
+    assert file.number_of_bytes_in_longest_line == 0
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
@@ -175,6 +182,7 @@ def test_file_with_three_lines_first_and_last_empty(generate_file_on_disk):
     file = File(file_path)
 
     assert(file.number_of_lines == 3)
+    assert file.number_of_bytes_in_longest_line == 3
 
     lines = file.load_lines(0, 1)
     assert len(lines) == 1
