@@ -13,6 +13,5 @@ class LineView(Widget):
             return Strip.blank(self.size.width)
 
         segments = [Segment(line) for line in self._file.load_lines(y, 1)]
-        # FIXME(KNR): we need the max number of characters, not the number of bytes
-        strip = Strip(segments, self._file.number_of_bytes_in_longest_line)
+        strip = Strip(segments, self._file.number_of_characters_in_longest_line)
         return strip

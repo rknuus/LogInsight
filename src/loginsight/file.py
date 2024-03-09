@@ -22,9 +22,10 @@ class File:
         self._size = self._file.tell()
 
         # TODO(KNR): check if the scan is best done in the background
-        self._line_start_positions, self._number_of_bytes_in_line = self._scan_line_positions()
+        self._line_start_positions, self._number_of_bytes_in_line, self._number_of_characters_in_line = self._scan_line_positions()
         # TODO(KNR): benchmark assigning max to the member variable in every loop
         self._number_of_bytes_in_longest_line = max(self._number_of_bytes_in_line) if self._number_of_bytes_in_line else 0
+        self._number_of_characters_in_longest_line = max(self._number_of_characters_in_line) if self._number_of_characters_in_line else 0
 
     @property
     def path(self) -> Path:
@@ -41,6 +42,10 @@ class File:
     @property
     def number_of_bytes_in_longest_line(self) -> int:
         return self._number_of_bytes_in_longest_line
+
+    @property
+    def number_of_characters_in_longest_line(self) -> int:
+        return self._number_of_characters_in_longest_line
 
     def load_lines(self, starting_at_line_number, number_of_lines) -> list[str]:
         if starting_at_line_number < 0:
@@ -63,9 +68,7 @@ class File:
         raw_bytes = os.pread(self._fileno,
                              requested_number_of_bytes,
                              start_at_byte)
-        lines = (raw_bytes.decode('utf-8', errors='replace')
-                         .expandtabs(4)
-                         .split('\n'))
+        lines = self._decode(raw_bytes).split('\n')
         return lines[0:number_of_lines]
 
     @property
@@ -73,7 +76,7 @@ class File:
         assert self._file is not None
         return self._file.fileno()
 
-    def _scan_line_positions(self) -> tuple[list[int], list[int]]:
+    def _scan_line_positions(self) -> tuple[list[int], list[int], list[int]]:
         '''
         Scans for newlines and returns two lists, one with all the line start positions and one with
         all the line lengths. Those information are used by method load_lines().
@@ -83,30 +86,45 @@ class File:
         '''
 
         if self.size_in_bytes == 0:
-            return [], []
+            return [], [], []
+
+        line_start_positions: list[int] = []
+        line_lengths_in_bytes: list[int] = []
+        line_lengths_in_characters: list[int] = []
 
         with mmap.mmap(self._fileno, self.size_in_bytes, prot=mmap.PROT_READ) as memory_mapped_file:
-            # both in unit bytes
-            line_start_positions: list[int] = []
-            line_lengths: list[int] = []
-
             # TODO(KNR): optimize similar to toolong/src/toolong/log_file.py to yield batches to
             # improve reactivity
             previous_newline_position = -1
             while (newline_position := memory_mapped_file.find(b'\n', previous_newline_position + 1)) != -1:
                 start_at = previous_newline_position + 1  # +1 to skip newline character
                 end_at = newline_position
-                previous_newline_position = newline_position
 
-                length = end_at - start_at
+                length_in_bytes = end_at - start_at
                 line_start_positions.append(start_at)
-                line_lengths.append(length)
+                line_lengths_in_bytes.append(length_in_bytes)
+
+                # FIXME(KNR): yuck
+                memory_mapped_file.seek(start_at)
+                raw_bytes = memory_mapped_file.read(length_in_bytes)
+                line_lengths_in_characters.append(len(self._decode(raw_bytes)))
+
+                previous_newline_position = newline_position
 
             start_at = previous_newline_position + 1  # +1 to skip newline character
             end_at = self.size_in_bytes
 
-            length = end_at - start_at
+            length_in_bytes = end_at - start_at
             line_start_positions.append(start_at)
-            line_lengths.append(length)
+            line_lengths_in_bytes.append(length_in_bytes)
 
-            return line_start_positions, line_lengths
+            # FIXME(KNR): yuck
+            memory_mapped_file.seek(start_at)
+            raw_bytes = memory_mapped_file.read(length_in_bytes)
+            line_lengths_in_characters.append(len(self._decode(raw_bytes)))
+
+        return line_start_positions, line_lengths_in_bytes, line_lengths_in_characters
+
+    def _decode(self, raw_bytes):
+        # TODO(KNR): hard coding UTF-8 won't work for all files
+        return raw_bytes.decode('utf-8', errors='replace').expandtabs(4)
