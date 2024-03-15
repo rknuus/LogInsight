@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 import mmap
 import os
@@ -20,18 +21,63 @@ class File:
         # readlines(). For the same reason we also disable buffering.
         self._file = open(self._path, "rb", buffering=0)
         self._file.seek(0, os.SEEK_END)
-        self._size = self._file.tell()
+        total_size_in_bytes = self._file.tell()
+
+        # KLUDGE(KNR): _scan_line_positions depends on size, so set it before the call
+        self._size = total_size_in_bytes
 
         # TODO(KNR): check if the scan is best done in the background
-        self._line_start_positions, self._number_of_bytes_in_line, self._number_of_characters_in_line = self._scan_line_positions()
-        # TODO(KNR): benchmark assigning max to the member variable in every loop
-        self._number_of_bytes_in_longest_line = max(self._number_of_bytes_in_line) if self._number_of_bytes_in_line else 0
-        self._number_of_characters_in_longest_line = max(self._number_of_characters_in_line) if self._number_of_characters_in_line else 0
+        (
+            self._line_start_positions,
+            number_of_bytes_in_line,
+            number_of_characters_in_line,
+        ) = self._scan_line_positions()
+        number_of_bytes_in_longest_line = (
+            max(number_of_bytes_in_line) if number_of_bytes_in_line else 0
+        )
+        number_of_characters_in_longest_line = (
+            max(number_of_characters_in_line) if number_of_characters_in_line else 0
+        )
+
+        # FIXME(KNR): merge the following information into a Size instance
+        self._number_of_bytes_in_line = number_of_bytes_in_line
+        self._number_of_characters_in_line = number_of_characters_in_line
+        # FIXME(KNR): benchmark assigning max to the member variable in every loop
+        self._number_of_bytes_in_longest_line = number_of_bytes_in_longest_line
+        self._number_of_characters_in_longest_line = (
+            number_of_characters_in_longest_line
+        )
+
+        self._new_size = self.Size(
+            total_size_in_bytes=total_size_in_bytes,
+            number_of_lines=len(self._line_start_positions),
+            size_of_longest_line=self.Size.LineSize(
+                in_bytes=number_of_bytes_in_longest_line,
+                in_characters=number_of_characters_in_longest_line,
+            ),
+        )
 
     @property
     def path(self) -> Path:
         return self._path
 
+    @dataclass
+    class Size:
+        total_size_in_bytes: int
+        number_of_lines: int
+
+        @dataclass
+        class LineSize:
+            in_bytes: int
+            in_characters: int
+
+        size_of_longest_line: LineSize
+
+    @property
+    def size(self) -> Size:
+        return self._new_size
+
+    # FIXME(KNR): remove following properties, as they are covered in size above
     @property
     def size_in_bytes(self) -> int:
         return self._size
@@ -61,6 +107,7 @@ class File:
                 "number_of_lines is {} but must be at least 1".format(number_of_lines)
             )
 
+        # FIXME(KNR): the mix of member variable _number_of_bytes_in_line and returning other variables is crummy
         available_number_of_lines = len(self._number_of_bytes_in_line)
         if starting_at_line_number + number_of_lines > available_number_of_lines:
             raise EOFError
