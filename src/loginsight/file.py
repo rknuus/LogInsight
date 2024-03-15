@@ -19,7 +19,7 @@ class File:
         # We use binary mode, because we build up lists of newline positions and line lengths (both in bytes) and use
         # those lists to navigate the file ourselves instead of using readlines(). For the same reason we also disable
         # buffering.
-        self._file = open(self._path, "rb", buffering=0)
+        self._file = open(self._path, 'rb', buffering=0)
         self._file.seek(0, os.SEEK_END)
         self._file_size_in_bytes = self._file.tell()
 
@@ -58,9 +58,9 @@ class File:
     def load_lines(self, starting_at_line_number, number_of_lines) -> list[str]:
         if starting_at_line_number < 0:
             # TODO(KNR): use structured logging to capture context
-            raise ValueError("starting_at_line_number is {} but must be at least 0".format(starting_at_line_number))
+            raise ValueError('starting_at_line_number is {} but must be at least 0'.format(starting_at_line_number))
         if number_of_lines < 1:
-            raise ValueError("number_of_lines is {} but must be at least 1".format(number_of_lines))
+            raise ValueError('number_of_lines is {} but must be at least 1'.format(number_of_lines))
 
         available_number_of_lines = len(self._line_lengths)
         if starting_at_line_number + number_of_lines > available_number_of_lines:
@@ -77,7 +77,7 @@ class File:
         # TODO(KNR): explore whether os.preadv() would help to keep the memory consumption in check
         # even though textual.Strip objects are immutable
         raw_bytes = os.pread(self._fileno, requested_number_of_bytes, start_at_byte)
-        lines = self._decode(raw_bytes).split("\n")
+        lines = self._decode(raw_bytes).split('\n')
         return lines[0:number_of_lines]
 
     @property
@@ -104,7 +104,7 @@ class File:
             # TODO(KNR): optimize similar to toolong/src/toolong/log_file.py to yield batches to
             # improve reactivity
             previous_newline_position = -1
-            while (newline_position := memory_mapped_file.find(b"\n", previous_newline_position + 1)) != -1:
+            while (newline_position := memory_mapped_file.find(b'\n', previous_newline_position + 1)) != -1:
                 start_at = previous_newline_position + 1  # +1 to skip newline character
                 end_at = newline_position
                 length_in_bytes = end_at - start_at
@@ -135,4 +135,4 @@ class File:
 
     def _decode(self, raw_bytes):
         # TODO(KNR): hard coding UTF-8 won't work for all files
-        return raw_bytes.decode("utf-8", errors="replace").expandtabs(4)
+        return raw_bytes.decode('utf-8', errors='replace').expandtabs(4)
