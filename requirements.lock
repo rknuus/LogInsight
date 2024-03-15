@@ -13,7 +13,6 @@ click==8.1.7
 linkify-it-py==2.0.3
     # via markdown-it-py
 markdown-it-py==3.0.0
-    # via markdown-it-py
     # via mdit-py-plugins
     # via rich
     # via textual
