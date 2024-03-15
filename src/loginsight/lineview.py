@@ -10,7 +10,7 @@ class LineView(Widget):
 
     def render_line(self, y: int) -> Strip:
         if y >= self._file.number_of_lines:
-            return Strip.blank(self.size.width)
+            return Strip.blank(self._file.number_of_characters_in_longest_line)
 
         segments = [Segment(line) for line in self._file.load_lines(y, 1)]
         strip = Strip(segments, self._file.number_of_characters_in_longest_line)
