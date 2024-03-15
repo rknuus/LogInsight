@@ -66,7 +66,7 @@ class File:
         if starting_at_line_number + number_of_lines > available_number_of_lines:
             raise EOFError
 
-        # TODO(KNR): any caching?
+        # TODO(KNR): add caching
         number_of_newlines = number_of_lines - 1
         last_line = starting_at_line_number + number_of_lines
         requested_number_of_bytes = (
@@ -95,7 +95,7 @@ class File:
         """
 
         line_start_positions: list[int] = []
-        line_lengths: list[LineLength] = []
+        line_lengths: list[File.LineLength] = []
 
         if self.size_in_bytes == 0:
             return line_start_positions, line_lengths
@@ -111,7 +111,6 @@ class File:
 
                 line_start_positions.append(start_at)
 
-                # FIXME(KNR): yuck
                 memory_mapped_file.seek(start_at)
                 raw_bytes = memory_mapped_file.read(length_in_bytes)
 
@@ -127,13 +126,11 @@ class File:
 
             line_start_positions.append(start_at)
 
-            # FIXME(KNR): yuck
             memory_mapped_file.seek(start_at)
             raw_bytes = memory_mapped_file.read(length_in_bytes)
 
             line_lengths.append(self.LineLength(in_bytes=length_in_bytes, in_characters=len(self._decode(raw_bytes))))
 
-        # FIXME(KNR): the mix of member variable _number_of_bytes_in_line and returning other variables is crummy
         return line_start_positions, line_lengths
 
     def _decode(self, raw_bytes):
